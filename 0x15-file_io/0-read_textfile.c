@@ -1,34 +1,44 @@
 #include "main.h"
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stdlib.h>
 
 /**
- * create_file - Creates a file.
- * @filename: A pointer to the name of the file to create.
- * @text_content: A pointer to a string to write to the file.
+ * read_textfile - reads a text file and prints it to the POSIX standard output
+ * @filename: name of the file to read
+ * @letters: number of letters it should read and print
  *
- * Return: If the function fails - -1.
- *         Otherwise - 1.
+ * Return: actual number of letters it could read and print
  */
-int create_file(const char *filename, char *text_content)
+ssize_t read_textfile(const char *filename, size_t letters)
 {
-	int fd, w, len = 0;
+	int fd;
+	ssize_t lenr, lenw;
+	char *buffer;
 
 	if (filename == NULL)
-		return (-1);
-
-	if (text_content != NULL)
+		return (0);
+	fd = open(filename, O_RDONLY);
+	if (fd == -1)
+		return (0);
+	buffer = malloc(sizeof(char) * letters);
+	if (buffer == NULL)
 	{
-		for (len = 0; text_content[len];)
-			len++;
+		close(fd);
+		return (0);
 	}
-
-	fd = open(filename, O_CREAT | O_RDWR | O_TRUNC, 0600);
-	w = write(fd, text_content, len);
-
-	if (fd == -1 || w == -1)
-		return (-1);
-
+	lenr = read(fd, buffer, letters);
 	close(fd);
-
-	return (1);
+	if (lenr == -1)
+	{
+		free(buffer);
+		return (0);
+	}
+	lenw = write(STDOUT_FILENO, buffer, lenr);
+	free(buffer);
+	if (lenr != lenw)
+		return (0);
+	return (lenw);
 }
-
